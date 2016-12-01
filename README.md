@@ -6,7 +6,7 @@ system with focus on operating servers.
 # Table of Contents
 
   * [Linux intro course](#linux-intro-course)
-    * [Table of Contents](#table-of-contents)
+  * [Table of Contents](#table-of-contents)
     * [Agenda](#agenda)
     * [Introduction](#introduction)
     * [Setting up VirtualBox](#setting-up-virtualbox)
@@ -15,7 +15,29 @@ system with focus on operating servers.
       * [Look around](#look-around)
     * [Running the lab machine](#running-the-lab-machine)
     * [SSH\-ing into the machine](#ssh-ing-into-the-machine)
+      * [The prompt](#the-prompt)
+      * [The home directory](#the-home-directory)
+      * [The $](#the-)
+      * [Testing boundaries with rm](#testing-boundaries-with-rm)
+    * [Becoming <em>root</em>, the user\.](#becoming-root-the-user)
+    * [Updating the system with APT](#updating-the-system-with-apt)
+      * [Reasoning about changes – interlude](#reasoning-about-changes--interlude)
     * [Installing software with apt](#installing-software-with-apt)
+      * [Paginating long output](#paginating-long-output)
+      * [Installing F](#installing-f)
+    * [Editing files from the command line](#editing-files-from-the-command-line)
+      * [Entering intsert mode](#entering-intsert-mode)
+      * [Pulling down Suave](#pulling-down-suave)
+    * [Running networked software](#running-networked-software)
+      * [Running the web server](#running-the-web-server)
+      * [Querying the web server](#querying-the-web-server)
+      * [Run in background](#run-in-background)
+      * [Resume and kill jobs](#resume-and-kill-jobs)
+      * [chmod](#chmod)
+      * [Collecting the IP numbers](#collecting-the-ip-numbers)
+      * [curl from host](#curl-from-host)
+      * [Change Suave's binding](#change-suaves-binding)
+      * [netstat](#netstat)
 
 ## Agenda
 
@@ -295,27 +317,191 @@ Ha! Did you see what I did there? *sudo* is a way to selectively run a command
 as *root* and then there's `&&` that executes the right hand side after the
 left hand side has finished executing.
 
+You can use the `tree` command to inspect the state of the folder after
+unzipping.
+
 ## Running networked software
+
+Linux is great for networked software. Let's run some, so we can inspect what
+happens on an operating system level as we do.
+
 ### Running the web server
 
-Let's run it!
+With Suave downloaded, we should be able to get going. Let's run hello.fsx!
 
     $ fsharpi hello.fsx
     [16:25:16 INF] Smooth! Suave listener started in 64.802 with binding 127.0.0.1:8083
 
+Bring up a new terminal on your host machine (the one running the virtual
+machine) and do `vagrant ssh` in it.
+
+### Querying the web server
+
+Like it says, it's currently listening at 127.0.0.1:8083. This is means that
+it's listening at localhost - 127.0.0.1 is the IPv4 address of localhost, which
+means that only processes running locally on the machine can access the socket's
+bound endpoint (IP+port).
+
+In the new terminal, inside the virtual machine, run `curl localhost:8083` to
+query the web server.
+
+![Localhost web server](./screens/localhost-webserver.png)
+
+The response contains the body "Hello World!" like one would expect. Note the
+lack of a line-break between the end of the response and the start of the
+shell's print of `ubuntu@ubuntu-xenial:~$`. This is the default behaviour of
+Bash when printing lines that don't end with newlines. Bash is the default shell
+on Ubuntu.
+
 ### Run in background
-### Resume jobs
-### Kill jobs
+
+Return to the terminal with the running web server. Press CTRL+Z. This moves the
+web server to the background and *pauses* it, printing `[1]+  Stopped
+fsharpi hello.fsx`.
+
+Note how you can still not make requests to the program, because it's connected
+to the terminal's STDIN (input). To enable the program to run in the background,
+you can make its STDIN file handle point to `/dev/null`, which is a special file
+in the file system which acts as a black hole.
+
+    fsharpi hello.fsx < /dev/null &
+
+Output wasn't redirected and will still print to STDOUT. Now try `curl
+127.0.0.1:8083` again; you should see output.
+
+### Resume and kill jobs
+
+To get back the program, so you can close it, either run `fg` (foreground) or
+`kill %1`. You can use `jobs` to see what "jobs" that your shell has running in
+the bakground.
+
+If you have some other program running that you want to kill, you can "grep" for
+it:
+
+    $ ps aux | grep "myprogram"
+    ...
+    ubuntu   12591  0.0  0.4  95368  5012 ?        R    19:39   0:00 sshd: ubuntu@pts/0
+    ...
+
+And then kill it by its process id. This sends a SIGINT to the process:
+
+    $ kill 12591
+
 ### chmod
-### curl locally
+
+Attentive readers may have noticed that we were had a line at the top of the fsx
+file, `#!/usr/bin/env fsharpi`. This line makes it possible for the shell Bash
+to know what program to run your file with. Let's try to run it!
+
+    $ hello.fsx
+    hello.fsx: command not found
+
+That didn't work. We have to use the dot-syntax for things that can run;
+
+   $ ./hello.fsx
+   -bash: ./hello.fsx: Permission denied
+
+This time – a different error message. Bash is telling us that it's not
+permitted to execute the fsx file.
+
+   $ chmod +x hello.fsx
+   $ ./hello.fsx
+   [20:06:35 INF] Smooth! Suave listener started in 65.762 with binding 127.0.0.1:8083
+
+### Collecting the IP numbers
+
+The `Vagrantfile` in this repo by default places the virtual machine on a
+bridged network adapter. In other words, the machine is placed on the same
+network as the host machine and will most likely receive an IP just like your
+laptop has. Let's check what IP it's been given.
+
+    $ ip addr
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1
+        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+        inet 127.0.0.1/8 scope host lo
+           valid_lft forever preferred_lft forever
+        inet6 ::1/128 scope host
+           valid_lft forever preferred_lft forever
+    2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+        link/ether 02:58:f3:11:f2:f2 brd ff:ff:ff:ff:ff:ff
+        inet 10.0.2.15/24 brd 10.0.2.255 scope global enp0s3
+           valid_lft forever preferred_lft forever
+        inet6 fe80::58:f3ff:fe11:f2f2/64 scope link
+           valid_lft forever preferred_lft forever
+    3: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+        link/ether 08:00:27:b6:04:a0 brd ff:ff:ff:ff:ff:ff
+        inet 10.0.1.97/24 brd 10.0.1.255 scope global enp0s8
+           valid_lft forever preferred_lft forever
+        inet6 fe80::a00:27ff:feb6:4a0/64 scope link
+           valid_lft forever preferred_lft forever
+
+Here there are three interfaces (NICs) listed. One `lo`, aka. local or loopback,
+which has the local IP 127.0.0.1 in IPv4 and [::1] in IPv6. There's also two
+NICs starting with 10. Look at your host's IP and select the equivalent IP. In
+my case my host has `inet 10.0.1.195 netmask 0xffffff00` and the guest/ubuntu
+machine a corresponding `inet 10.0.1.97/24 brd 10.0.1.255` on the same network.
+
 ### curl from host
+
+With the web server started, perform a curl command from the host.
+
+    $ curl 10.0.1.97:8083
+    curl: (7) Failed to connect to 10.0.1.97 port 8083: Connection refused
+
+As you can see, even if the web server is listening to 127.0.0.1, it's not
+accessible from the host (or any other computer on the same subnet).
+
+### Change Suave's binding
+
+Let's edit the `hello.fsx` file with vim to make it bind to the subnet IP as
+well as to the loopback interface/local NIC.
+
+    #!/usr/bin/env fsharpi
+    #r "./lib/net40/Suave.dll"
+    open Suave
+    let config =
+      { defaultConfig with
+          bindings = [ HttpBinding.createSimple HTTP "127.0.0.1" 8083
+                       HttpBinding.createSimple HTTP "10.0.1.97" 8083 ] }
+    startWebServer config (Successful.OK "Hello World!")
+
+Now when you start the server;
+
+    [20:29:40 INF] Smooth! Suave listener started in 72.467 with binding 10.0.1.97:8083
+    [20:29:40 INF] Smooth! Suave listener started in 82.535 with binding 127.0.0.1:8083
+
+Then from the host, you can curl again:
+
+    $ curl 10.0.1.97:8083
+    Hello World!
+
+Now the host can make requests towards the web server. If you're doing this in a
+group, you can now share your virtual machine IPs between yourselves and make
+requests to your web servers.
+
 ### netstat
-### Sockets and port bindings
-### Changing hello.fsx to bind to 0.0.0.0
-### Try curl again
 
+Again, enter the virtual machine – we'll inspect the listening ports on the
+server. A listener is a equivalent to a binding of a process to an interface and
+a port.
 
----
+    $ netstat -napt
+    (Not all processes could be identified, non-owned process info
+     will not be shown, you would have to be root to see it all.)
+    Active Internet connections (servers and established)
+    Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+    tcp        0      0 127.0.0.1:8083          0.0.0.0:*               LISTEN      12829/cli
+    tcp        0      0 10.0.1.97:8083          0.0.0.0:*               LISTEN      12829/cli
+    tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      -
+    tcp        0      0 10.0.2.15:22            10.0.2.2:56395          ESTABLISHED -
+    tcp        0      0 10.0.2.15:22            10.0.2.2:56386          ESTABLISHED -
+    tcp6       0      0 :::22                   :::*                    LISTEN      -
+
+The topmost two sockets are the two sockets that we've bound with Suave. The
+four sockets below are; the SSH daemon/service binding (on all interfaces), the
+client-server socket for the first host-guest terminal, the client-server socket
+for the second host-guest terminal and finally the SSH daemon/service binding on
+IPv6 (on all interfaces).
 
  [virtualbox-dl]: https://www.virtualbox.org/wiki/Downloads "VirtualBox can be downloaded from this link"
  [git-https-mitm-fix]: https://stackoverflow.com/questions/12561299/how-to-access-github-through-firewall-playing-man-in-the-middle-when-using-https "How to accept deep traffic inspection"
