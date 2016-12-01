@@ -7,7 +7,6 @@ system with focus on operating servers.
 
   * [Linux intro course](#linux-intro-course)
   * [Table of Contents](#table-of-contents)
-    * [Agenda](#agenda)
     * [Introduction](#introduction)
     * [Setting up VirtualBox](#setting-up-virtualbox)
     * [Setting up vagrant](#setting-up-vagrant)
@@ -38,16 +37,6 @@ system with focus on operating servers.
       * [curl from host](#curl-from-host)
       * [Change Suave's binding](#change-suaves-binding)
       * [netstat](#netstat)
-
-## Agenda
-
-- Getting the lab environment set up
-- SSH
-- Installing software with apt
-- Using vim to write text/edit config
-- Starting a Suave web server
-- Surfing to your Suave web server
-- Users & Groups & sudo
 
 ## Introduction
 
