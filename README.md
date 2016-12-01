@@ -272,7 +272,7 @@ screen:
 
 (the table is my desktop background, your mileage may differ!).
 
-### Entering intsert mode
+### Entering insert mode
 
 Vim is a modal editor. It means that you can be in a few different modes:
 *normal*, *insert*, *visual*, *select*, *command-line* and *ex*. You're currently in the
