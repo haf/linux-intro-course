@@ -503,9 +503,16 @@ client-server socket for the first host-guest terminal, the client-server socket
 for the second host-guest terminal and finally the SSH daemon/service binding on
 IPv6 (on all interfaces).
 
+## Conclusion
+
+In this tutorial you've learnt to take your first steps towards building
+networked services on linux. Feel free to [send a pull request][github-PR] if
+you have improvement suggestions to this tutorial.
+
  [virtualbox-dl]: https://www.virtualbox.org/wiki/Downloads "VirtualBox can be downloaded from this link"
  [git-https-mitm-fix]: https://stackoverflow.com/questions/12561299/how-to-access-github-through-firewall-playing-man-in-the-middle-when-using-https "How to accept deep traffic inspection"
  [vagrant-vault]: https://github.com/haf/vagrant-vault "A repository that configured Hashicorp Vault in a cluster configuration"
  [latent-config-checker]: ./papers/latent-config-checker.pdf "Early Detection of Configuration Errors to Reduce Failure Damage"
  [simple-testing]: ./papers/simple-testing.pdf "Simple testing can prevent most critical failures"
  [vim-modes]: https://en.wikibooks.org/wiki/Learning_the_vi_Editor/Vim/Modes "The different modes in vim"
+ [github-PR]: https://github.com/haf/linux-intro-course/pulls
