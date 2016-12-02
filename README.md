@@ -241,7 +241,7 @@ standard output (STDOUT) of the process *tree* and pipes it to the process
 At the bottom of your terminal, you'll see a colon, `:`. You can now use your
 arrow keys or `j` and `k` to scroll up and down.
 
-### Installing F\#
+### Installing F# #
 
 Let's see if we can run some code – after all, we're developers. Let's run
 `apt-get install fsharp` to get the F# interactive and the ability to compile F#
