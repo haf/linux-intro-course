@@ -498,6 +498,25 @@ In this tutorial you've learnt to take your first steps towards building
 networked services on linux. Feel free to [send a pull request][github-PR] if
 you have improvement suggestions to this tutorial.
 
+# Chapter 2
+
+ - vim recap
+ - Command flags – unix convention
+ - More useful commands – touch, tail, less, mkdir, mv, cp, rm, rmdir
+ - Linux file permissions
+ - stdin, stdout, stderr and file handles
+ - Adding/removing users from groups
+ - Debugging a HTTP request with tcpdump
+ - The TCP lifecycle – from SYN to FIN
+ - Setting up consul as a cluster
+ - Reading configuration from consul with Fakta
+ - Creating a package of the above
+ - Creating a CI pipeline that creates a package
+
+## VIM recap
+
+
+
  [virtualbox-dl]: https://www.virtualbox.org/wiki/Downloads "VirtualBox can be downloaded from this link"
  [git-https-mitm-fix]: https://stackoverflow.com/questions/12561299/how-to-access-github-through-firewall-playing-man-in-the-middle-when-using-https "How to accept deep traffic inspection"
  [vagrant-vault]: https://github.com/haf/vagrant-vault "A repository that configured Hashicorp Vault in a cluster configuration"
