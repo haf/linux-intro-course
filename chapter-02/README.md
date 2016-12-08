@@ -500,7 +500,56 @@ We'll create a small Suave service as a console app.
     ...
     ✗ ./build.sh
 
-You should now have a small app MySrv in `./build`.
+You should now have a small app MySrv in `./build`. Now, let's write some code
+that lets MySrv register itself in Consul on start. This will enable us to use
+Consul to steer the load balancer.
+
+### Auto-registering in Consul
+
+Introducing *Fakta*.
+
+ - Poll-based (HTTP)
+ - Push-based ("My status is..." to Consulvia Fakta)
+ - Socket-based (TCP)
+
+### Querying Consul for a specific service
+
+    curl -X GET http://localhost:8600/v1/kv/services?recurse=true
+
+### Setting up the load balancer's config with consul-template
+
+    upstream api {
+      {{ ep in eps do }}
+        server {{ ep.ipv6 }};
+      {{ end }}
+    }
+
+### Make each server respond with its hostname
+
+    [lang=fsharp]
+    open System
+    open System.Net
+    open Hopac
+    open Hopac.Operators
+    open Suave
+    open Suave.Successful
+    open Suave.ResponseErrors
+
+    let registerChecks () =
+      ()
+
+    let app =
+      choose [
+        GET >=> path "/health/hostname" >=> OK (Dns.GetHostName())
+        GET >=> OK "Hello world!"
+        ResponseErrors.NOT_FOUND "Resource not found"
+      ]
+
+    [<EntryPoint>]
+    let main argv =
+      registerChecks ()
+      startWebServer config app
+
 
  [vim-1]: https://yanpritzker.com/learn-to-speak-vim-verbs-nouns-and-modifiers-d7bfed1f6b2d#.ss7enj0qq
  [vim-2]: http://www.openvim.com/
