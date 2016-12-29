@@ -550,6 +550,7 @@ Introducing *Fakta*.
       registerChecks ()
       startWebServer config app
 
+https://github.com/kelseyhightower/consul-on-kubernetes
 
  [vim-1]: https://yanpritzker.com/learn-to-speak-vim-verbs-nouns-and-modifiers-d7bfed1f6b2d#.ss7enj0qq
  [vim-2]: http://www.openvim.com/
