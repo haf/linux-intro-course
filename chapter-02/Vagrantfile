@@ -34,5 +34,6 @@ Vagrant.configure("2") do |config|
   config.vm.define 'lb' do |n1|
     n1.vm.hostname = 'lb'
     n1.vm.network "private_network", ip: "172.20.20.20"
+    n1.vm.synced_folder ".", "/vagrant"
   end
 end

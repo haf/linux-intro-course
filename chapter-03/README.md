@@ -202,6 +202,36 @@ With Consul running, let's ensure we have a repeatable environment by packaging
 consul as a .deb package. We'll set it up to use the existing directories as
 used in the previous sections.
 
+Building a package for linux used to be a very annoying process until *fpm* came
+along. It stands for "effing package management" and is a way to easily package
+a set of files.
+
+    sudo apt-get install ruby ruby-dev build-essential curl
+    sudo gem install fpm
+    mkdir -p ./usr/local/bin ./usr/lib/systemd/system ./etc/consul.d/{server,client,bootstrap}
+    curl -LO https://releases.hashicorp.com/consul/0.7.2/consul_0.7.2_linux_amd64.zip
+    unzip consul_0.7.2_linux_amd64.zip
+    mv consul_0.7.2_linux_amd64/consul ./usr/local/bin/
+    cat <<EOF >./usr/lib/systemd/system/consul.service
+    [Unit]
+    Description=Consul server
+    Wants=network-online.target
+    After=network-online.target
+
+    [Service]
+    Type=simple
+    Restart=on-failure
+    RestartSec=10
+    User=graylog
+    Group=graylog
+    LimitNOFILE=64000
+
+    ExecStart=/usr/local/bin/consul
+
+    [Install]
+    WantedBy=multi-user.target
+    EOF
+    fpm 
 
 
 
