@@ -288,25 +288,43 @@ starts. It works primarily in `/usr/lib/systemd/system` (note the double
 As a final touch, fill out the [configuration][consul-conf-docs] in the .conf
 files that were created. To boostrap in `./etc/consul.d/bootstrap/consul.conf`:
 
+    export CONSUL_KEY="$(consul keygen)"
+
+The key is used for the configuration files.
+
+    cat <<EOF >./etc/consul.d/bootstrap/consul.conf
     {
       "bootstrap": true,
       "server": true,
       "datacenter": "dc1",
-      "data_dir": "/var/lib/consul"
+      "data_dir": "/var/lib/consul",
+      "encrypt": "$CONSUL_KEY"
     }
 
 Then fill out the server and clients, too:
 
     cat <<EOF >./etc/consul.d/server/consul.conf
     {
-        "bootstrap": false,
-        "server": true,
-        "datacenter": "dc1",
-        "data_dir": "/var/lib/consul",
-        "encrypt": "$(consul keygen)"
+      "server": true,
+      "datacenter": "dc1",
+      "data_dir": "/var/lib/consul",
+      "encrypt": "$CONSUL_KEY",
+      "start_join": ["172.20.20.11", "172.20.20.12"]
     }
-    EOF
 
+    cat <<EOF >./etc/consul.d/client/consul.conf
+    {
+      "server": false,
+      "datacenter": "dc1",
+      "data_dir": "/var/lib/consul",
+      "encrypt": "$CONSUL_KEY",
+      "start_join": ["172.20.20.10", "172.20.20.11", "172.20.20.12"]
+    }
+
+If you happen to have static IPs in your production environment, this will be
+enough. In fact, since Consul works well for service discovery, having specific
+IPs for Consul may be a good trade-off, as long as you discover all other
+services through consul.
 
 #### Packaging the `.deb` package
 
@@ -336,100 +354,58 @@ this:
     $ ls -lah /etc/systemd/system/multi-user.target.wants/consul.service
     lrwxrwxrwx 1 root root 38 Jan  1 17:48 /etc/systemd/system/multi-user.target.wants/consul.service -> /usr/lib/systemd/system/consul.service
 
-#### Boostrap the cluster
+### What about security?
 
-Let's modify the boostrap file to contain the
+In the above tutorial the person provisioning the cluster as well as anyone with
+access to the provisioning scripts can intercept and interfere with production.
+Let's analyse the situation:
 
-### Set up your own service on each node
+ - There's no firewall, so any other node in the LAN could connect to Consul and
+   exfiltrate all its data.
+ - We're only encrypting the gossip with a symmetric key; there's no encryption
+   for data in rest or data in transit for e.g. the key-value store or any of
+   the other services provided by consul.
+ - A malicious insider could read the keys from source control and use that to
+   disrupt the cluster's gossip.
+ - Similarly he/she could connect to Consul and read/write any data, including
+   intercepting service discovery to perform man-in-the-middle attacks.
+ - We're yet to set up TLS encryption between consul nodes.
+ - We haven't in any way hardened our operating system; we're not shipping its
+   logs and we're not using AppArmour.
+ - We've made Consul start in its own group and with its own user.
+ - We've made the Consul set up repeatable.
 
-Let's leave the consul cluster running (you can do a `vagrant suspend` and then
-`vagrant up` to conserve battery power if you leave it overnight).
+As you can see, there's a lot to think about; no wonder that being a sysadmin is
+a full time-job. However, this tutorial is for working programmers, so we're
+going to the sharpest sword that we have; abstraction.
 
-In your normal terminal, let's download
-[Forge](https://github.com/fsharp-editing/Forge/releases) a command-line
-interface (CLI) for creating and managing F# projects.
+It's a double-edged one, though. We've gone through a few layers already:
 
-We'll create a small Suave service as a console app.
+ - From dev laptop to VM
+ - From running commands in SSH to running them through the Vagrantfile's
+   provisioning support
+ - From downloading and unzipping manually to packaging our software
+ - Going forward, using Consul means we're abstracting from IPs to service
+   discovery.
 
-    ✗ pwd
-    /Users/h/dev/linux-intro/chapter-03
-    ✗ curl -o Forge.zip -L https://github.com/fsharp-editing/Forge/releases/download/1.2.1/forge.zip
-    ✗ unzip Forge.zip
-    ✗ chmod +x forge.sh
-    ✗ ./forge.sh new project MySrv
+We've also experienced a lot of friction; everything has to be manually typed
+(of course it's still a magnitude fast than clicking 'the same way' through a
+user interface). When things fail, you have to remember where stdout, stderr and
+syslog are.
 
-    Forge should be run from solution/repository root. Please ensure you don't run it from folder containing other solutions
+So what more levels are there? In the next chapter we'll go through these
+abstraction layers:
 
-    Do You want to continue? [Y/n]
+ - From manually assigning IPs to letting the infrastructure assign IPs.
+ - From specifying binding NICs to specifying ports that are published from the
+   service on "some node's IP" (aka a "pod").
+ - The service-discovery mentioned above.
+ - From dealing with firewalls manually to letting the infrastructure handle
+   them.
+ - From manually generating passwords (like `consul keygen`) in order to save it
+   in source control for bootstrapping nodes, to saving it in a Secret-store.
 
-    Getting templates...
-    Creating /Users/h/dev/lynx/linux-intro/chapter-03/templates
-    git clone -b templates --single-branch https://github.com/fsharp-editing/Forge.git templates
-
-    Enter project name:
-    > MySrv
-    Enter project directory (relative to working directory):
-    > .
-    Choose a template:
-     - suave
-     - suaveazurebootstrapper
-     - temp
-
-    > suave
-    Generating project...
-    ...
-    ✗ ./build.sh
-
-You should now have a small app MySrv in `./build`. Now, let's write some code
-that lets MySrv register itself in Consul on start. This will enable us to use
-Consul to steer the load balancer.
-
-### Auto-registering in Consul
-
-Introducing *Fakta*.
-
- - Poll-based (HTTP)
- - Push-based ("My status is..." to Consulvia Fakta)
- - Socket-based (TCP)
-
-### Querying Consul for a specific service
-
-    curl -X GET http://localhost:8600/v1/kv/services?recurse=true
-
-### Setting up the load balancer's config with consul-template
-
-    upstream api {
-      {{ ep in eps do }}
-        server {{ ep.ipv6 }};
-      {{ end }}
-    }
-
-### Make each server respond with its hostname
-
-    [lang=fsharp]
-    open System
-    open System.Net
-    open Hopac
-    open Hopac.Operators
-    open Suave
-    open Suave.Successful
-    open Suave.ResponseErrors
-
-    let registerChecks () =
-      ()
-
-    let app =
-      choose [
-        GET >=> path "/health/hostname" >=> OK (Dns.GetHostName())
-        GET >=> OK "Hello world!"
-        ResponseErrors.NOT_FOUND "Resource not found"
-      ]
-
-    [<EntryPoint>]
-    let main argv =
-      registerChecks ()
-      startWebServer config app
-
+Until next time.
 
  [fakta-gh]: https://github.com/logibit/Fakta
  [systemd-rhel]: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sect-Managing_Services_with_systemd-Unit_Files.html

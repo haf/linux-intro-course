@@ -1,0 +1,38 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.provision "shell", inline: <<-SHELL
+    echo Installing dependencies...
+    sudo apt-get update
+    sudo apt-get install -y unzip curl
+
+    echo Fetching Consul...
+    cd /tmp/
+    curl -s https://releases.hashicorp.com/consul/0.7.1/consul_0.7.1_linux_amd64.zip -o consul.zip
+    echo Installing Consul...
+    unzip consul.zip
+    sudo chmod +x consul
+    sudo mv consul /usr/bin/consul
+    sudo mkdir /etc/consul.d
+    sudo chmod a+w /etc/consul.d
+    sudo apt install fsharp
+  SHELL
+
+  config.vm.define 'n1' do |n1|
+    n1.vm.hostname = 'n1'
+    n1.vm.network "private_network", ip: "172.20.20.10"
+  end
+  config.vm.define 'n2' do |n1|
+    n1.vm.hostname = 'n2'
+    n1.vm.network "private_network", ip: "172.20.20.11"
+  end
+  config.vm.define 'n3' do |n1|
+    n1.vm.hostname = 'n3'
+    n1.vm.network "private_network", ip: "172.20.20.12"
+  end
+  config.vm.define 'lb' do |n1|
+    n1.vm.hostname = 'lb'
+    n1.vm.network "private_network", ip: "172.20.20.20"
+  end
+end
