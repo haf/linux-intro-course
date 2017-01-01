@@ -3,6 +3,8 @@
  - Setting up Consul as a cluster
  - Packaging Consul
  - Installing Consul from a package
+ - Boostrapping Consul from package
+
  - Reading configuration from consul with Fakta
  - Firewalling our service
  - Setting up Consul in Kubernetes
@@ -124,11 +126,10 @@ has a single dash.
 We'll also use `runuser` to execute as the consul user. Run the following **as
 root**:
 
-    mkdir -p /var/lib/consul /opt/consul /etc/consul.d
+    mkdir -p /var/lib/consul /usr/local/bin /etc/consul.d
     addgroup --system consul
-    adduser --system --no-create-home --home /opt/consul --shell /sbin/nologin --group consul
+    adduser --system --no-create-home --home /var/lib/consul --shell /sbin/nologin --group consul
     chown -R consul:consul /var/lib/consul
-    chown -R consul:consul /opt/consul
     runuser -l consul -c 'consul agent -server -bootstrap-expect=3 -data-dir=/var/lib/consul -bind 172.20.20.10 -config-dir /etc/consul.d'
 
 The last line will output:
@@ -206,12 +207,26 @@ Building a package for linux used to be a very annoying process until *fpm* came
 along. It stands for "effing package management" and is a way to easily package
 a set of files.
 
-    sudo apt-get install ruby ruby-dev build-essential curl
-    sudo gem install fpm
+    sudo update-alternatives --set editor /usr/bin/vim.basic
+    sudo apt-get install ruby ruby-dev build-essential curl -y
+    sudo gem install fpm --no-ri
+    mkdir ~/pkg && cd ~/pkg
     mkdir -p ./usr/local/bin ./usr/lib/systemd/system ./etc/consul.d/{server,client,bootstrap}
+    touch ./etc/consul.d/bootstrap/consul.conf
+    touch ./etc/consul.d/server/consul.conf
     curl -LO https://releases.hashicorp.com/consul/0.7.2/consul_0.7.2_linux_amd64.zip
-    unzip consul_0.7.2_linux_amd64.zip
-    mv consul_0.7.2_linux_amd64/consul ./usr/local/bin/
+    sha256sum consul_0.7.2_linux_amd64.zip
+    # check its output now against https://releases.hashicorp.com/consul/0.7.2/consul_0.7.2_SHA256SUMS
+    unzip consul_0.7.2_linux_amd64.zip && rm consul_0.7.2_linux_amd64.zip
+    mv consul ./usr/local/bin/
+
+#### Creating the .service file
+
+The .service file is responsible for starting consul when the operating system
+starts. It works primarily in `/usr/lib/systemd/system` (note the double
+`system` substring) and in `/etc/systemd/system`. File in the former (ending in
+`.service`) are symlinked to the latter when you run `systemctl enable ...`.
+
     cat <<EOF >./usr/lib/systemd/system/consul.service
     [Unit]
     Description=Consul server
@@ -222,8 +237,8 @@ a set of files.
     Type=simple
     Restart=on-failure
     RestartSec=10
-    User=graylog
-    Group=graylog
+    User=consul
+    Group=consul
     LimitNOFILE=64000
 
     ExecStart=/usr/local/bin/consul
@@ -231,14 +246,99 @@ a set of files.
     [Install]
     WantedBy=multi-user.target
     EOF
-    fpm 
+
+    cat <<EOF >./pre-install
+    #!/bin/sh
+    set -e
+    user="consul"
+    group="consul"
+    datadir="/var/lib/consul"
+    confdir="/etc/consul.d"
+
+    if ! getent group "$group" > /dev/null 2>&1 ; then
+      addgroup --system "$group" --quiet
+    fi
+
+    if ! id "$user" > /dev/null 2>&1 ; then
+      adduser --system --home "$datadir" --no-create-home \
+        --ingroup "$group" --disabled-password \
+        --gecos "Consul server or client" \
+        --shell /bin/false --quiet "$user"
+    fi
+
+    chown -R consul:consul /etc/consul.d /var/lib/consul
+
+    exit 0
+    EOF
+
+    cat <<EOF >./post-install
+    #!/bin/sh
+    set -e
+    echo "To run: 'sudo systemctl daemon-reload'"
+    echo "To run: 'sudo systemctl enable consul'"
+    EOF
+
+    cat <<EOF >./pre-uninstall
+    #!/bin/sh
+    set -e
+    systemctl --no-reload stop consul.service >/dev/null 2>&1 || true
+    systemctl disable consul >/dev/null 2>&1 || true
+    EOF
+
+As a final touch, fill out the [configuration][consul-conf-docs] in the .conf
+files that were created. To boostrap in `./etc/consul.d/bootstrap/consul.conf`:
+
+    {
+      "bootstrap": true,
+      "server": true,
+      "datacenter": "dc1",
+      "data_dir": "/var/lib/consul"
+    }
+
+Then fill out the server and clients, too:
+
+    cat <<EOF >./etc/consul.d/server/consul.conf
+    {
+        "bootstrap": false,
+        "server": true,
+        "datacenter": "dc1",
+        "data_dir": "/var/lib/consul",
+        "encrypt": "$(consul keygen)"
+    }
+    EOF
 
 
+#### Packaging the `.deb` package
 
+    fpm --name consul --input-type dir --output-type deb --version 0.7.2 --vendor haf --pre-install ./pre-install --post-install ./post-install --pre-uninstall ./pre-uninstall --iteration 1 .
+    dpkg-deb -c consul_0.7.2-1_amd64.deb
 
+You can now try your installation:
 
+    sudo systemctl daemon-reload
+    sudo systemctl enable consul
+    sudo systemctl start consul && journalctl -fu consul -l
 
+Make note that:
 
+ - Services that bind to network interfaces should *not* be started by default,
+   because they may cause security vulnerabilities unless set up properly.
+ - You need to do `daemon-reload` for systemd to discover its new unit file.
+ - The file ends with `.service` but is called a unit-file. The unit file
+   schedules the service to be run.
+ - There [exists a lot of documentation][systemd-rhel] for systemd.
+ - You may successfully start a service with `systemctl start consul` but that
+   doesn't mean it starts automatically the next boot.
+
+If you have a look at the output of listing the symlink, it should look like
+this:
+
+    $ ls -lah /etc/systemd/system/multi-user.target.wants/consul.service
+    lrwxrwxrwx 1 root root 38 Jan  1 17:48 /etc/systemd/system/multi-user.target.wants/consul.service -> /usr/lib/systemd/system/consul.service
+
+#### Boostrap the cluster
+
+Let's modify the boostrap file to contain the
 
 ### Set up your own service on each node
 
@@ -332,3 +432,5 @@ Introducing *Fakta*.
 
 
  [fakta-gh]: https://github.com/logibit/Fakta
+ [systemd-rhel]: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sect-Managing_Services_with_systemd-Unit_Files.html
+ [consul-conf-docs]: https://www.consul.io/docs/agent/options.html
