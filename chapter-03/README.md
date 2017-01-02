@@ -252,7 +252,7 @@ starts. It works primarily in `/usr/lib/systemd/system` (note the double
     WantedBy=multi-user.target
     EOF
 
-    cat <<EOF >./pre-install
+    cat <<"EOF" >./pre-install
     #!/bin/sh
     set -e
     user="consul"
@@ -276,7 +276,7 @@ starts. It works primarily in `/usr/lib/systemd/system` (note the double
     exit 0
     EOF
 
-    cat <<EOF >./post-install
+    cat <<"EOF" >./post-install
     #!/bin/sh
     set -e
     echo "To run: 'sudo systemctl daemon-reload'"
