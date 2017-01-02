@@ -1,9 +1,18 @@
-## Chapter 3 – Setting of service discovery
+# Chapter 3 – Setting up service discovery
 
- - Setting up Consul as a cluster
- - Packaging Consul
- - Installing Consul from a package
- - Boostrapping Consul from package
+## ToC
+
+* [Chapter 3 – Setting up service discovery](#chapter-3--setting-up-service-discovery)
+  * [Spawning four nodes](#spawning-four-nodes)
+  * [Run consul on a single node](#run-consul-on-a-single-node)
+  * [Clustering consul](#clustering-consul)
+  * [Set up consul client on the load balancer](#set-up-consul-client-on-the-load-balancer)
+  * [Package Consul](#package-consul)
+    * [Creating the \.service file](#creating-the-service-file)
+    * [Packaging the \.deb package](#packaging-the-deb-package)
+  * [What about security?](#what-about-security)
+
+## Intro
 
 Now that we know a bit more about how to work with files, where to place
 configuration and databases, we'll try our hand at setting up a Consul cluster
@@ -28,7 +37,7 @@ The steps we're going to take are as follows:
  1. (homework) Set up load balancing to the three nodes
  1. (homework) Validate load balancing with health checks is working
 
-### Spawning four nodes
+## Spawning four nodes
 
 In this repository there's a directory called *chapter-03*. Destroy your current
 VM and start vagrant from there.
@@ -51,7 +60,7 @@ VM and start vagrant from there.
     n3                        running (virtualbox)
     lb                        running (virtualbox)
 
-### Run consul on a single node
+## Run consul on a single node
 
     ✗ vagrant ssh n1
     $ consul agent -dev
@@ -88,7 +97,7 @@ Let's SSH to validate that consul is up and running.
 
 Looking good. Now, let's cluster it!
 
-### Clustering consul
+## Clustering consul
 
 Consul nodes can work both as server nodes and client nodes. The server nodes
 should be an uneven number of nodes larger than three, with mutual connectivity.
@@ -174,7 +183,7 @@ You can also try to terminate one of the server – the cluster should remain
 running and should still respond to queries. Remember to start the server again
 once you're done.
 
-### Set up consul client on the load balancer
+## Set up consul client on the load balancer
 
 First create the user, group and folders, like for the other consul **server**s.
 However, this time, the consul agent should be run in **client** mode.
@@ -192,7 +201,7 @@ This time around, on n1:
 
 ![Consul servers and clients](../screens/consul-cluster-agent.png)
 
-### Package Consul
+## Package Consul
 
 With Consul running, let's ensure we have a repeatable environment by packaging
 consul as a .deb package. We'll set it up to use the existing directories as
@@ -215,7 +224,7 @@ a set of files.
     unzip consul_0.7.2_linux_amd64.zip && rm consul_0.7.2_linux_amd64.zip
     mv consul ./usr/local/bin/
 
-#### Creating the .service file
+### Creating the .service file
 
 The .service file is responsible for starting consul when the operating system
 starts. It works primarily in `/usr/lib/systemd/system` (note the double
@@ -321,7 +330,7 @@ enough. In fact, since Consul works well for service discovery, having specific
 IPs for Consul may be a good trade-off, as long as you discover all other
 services through consul.
 
-#### Packaging the `.deb` package
+### Packaging the `.deb` package
 
     fpm --name consul --input-type dir --output-type deb --version 0.7.2 --vendor haf --pre-install ./pre-install --post-install ./post-install --pre-uninstall ./pre-uninstall --iteration 1 .
     dpkg-deb -c consul_0.7.2-1_amd64.deb
@@ -349,7 +358,7 @@ this:
     $ ls -lah /etc/systemd/system/multi-user.target.wants/consul.service
     lrwxrwxrwx 1 root root 38 Jan  1 17:48 /etc/systemd/system/multi-user.target.wants/consul.service -> /usr/lib/systemd/system/consul.service
 
-### What about security?
+## What about security?
 
 In the above tutorial the person provisioning the cluster as well as anyone with
 access to the provisioning scripts can intercept and interfere with production.
