@@ -132,7 +132,7 @@ root**:
 
     mkdir -p /var/lib/consul /usr/local/bin /etc/consul.d
     addgroup --system consul
-    adduser --system --no-create-home --home /var/lib/consul --shell /sbin/nologin --group consul
+    adduser --system --no-create-home --home /var/lib/consul --shell /usr/sbin/nologin --group consul
     chown -R consul:consul /var/lib/consul
     runuser -l consul -c 'consul agent -server -bootstrap-expect=3 -data-dir=/var/lib/consul -bind 172.20.20.10 -config-dir /etc/consul.d'
 
