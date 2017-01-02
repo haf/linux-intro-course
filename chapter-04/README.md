@@ -461,12 +461,22 @@ Then in another terminal, run this to start your browser.
 
     $ open http://127.0.0.1:8500
 
+### Testing failure
 
+Consul is built to support failure of nodes. Because it's a persistent service,
+it will rely on its persistent-volume backed state on resumption from a crash.
+The StatefulSet will ensure that there are always three pods running. This means
+that you can delete pods freely. In one terminal, let's tail the log of
+consul-1, while deleting the pod for consul-2.
 
+    $ kubectl tail -f consul-1
 
+Then in another terminal:
 
+    $ kubectl tail -f consul-2
 
-
+Observe how the pods (`kubectl get pods` are restarted and a quorum is resumed
+via the logs).
 
 ### Set up your own service on each node
 
