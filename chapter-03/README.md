@@ -5,11 +5,6 @@
  - Installing Consul from a package
  - Boostrapping Consul from package
 
- - Reading configuration from consul with Fakta
- - Firewalling our service
- - Setting up Consul in Kubernetes
- - The F# forge – create a new F# project
-
 Now that we know a bit more about how to work with files, where to place
 configuration and databases, we'll try our hand at setting up a Consul cluster
 manually. By doing so, we'll learn more about how to operate non-trivial
