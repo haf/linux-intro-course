@@ -478,7 +478,9 @@ Then in another terminal:
 Observe how the pods (`kubectl get pods` are restarted and a quorum is resumed
 via the logs).
 
-### Set up your own service on each node
+## 
+
+## Set up your own service on each node
 
 Let's leave the consul cluster running (you can do a `vagrant suspend` and then
 `vagrant up` to conserve battery power if you leave it overnight).
@@ -571,7 +573,8 @@ Introducing *Fakta*.
 
  [kube]: http://kubernetes.io/
  [kube-svc]: http://kubernetes.io/docs/user-guide/services/
- [kube-pods]: http://kubernetes.io/docs/user-guide/pods/
+ [kube-ep]: http://stackoverflow.com/a/33941818/63621
+ [kube-pod]: http://kubernetes.io/docs/user-guide/pods/
  [kube-ss]: http://kubernetes.io/docs/concepts/abstractions/controllers/statefulsets/
  [kube-secret]: http://kubernetes.io/docs/user-guide/secrets/
  [kube-configmap]: http://kubernetes.io/docs/user-guide/configmap/
