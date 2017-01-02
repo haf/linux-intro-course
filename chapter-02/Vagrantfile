@@ -16,7 +16,7 @@ Vagrant.configure("2") do |config|
     sudo mv consul /usr/bin/consul
     sudo mkdir /etc/consul.d
     sudo chmod a+w /etc/consul.d
-    sudo apt install fsharp
+    sudo apt install fsharp -y
   SHELL
 
   config.vm.define 'n1' do |n1|
