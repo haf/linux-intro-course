@@ -129,6 +129,8 @@ app-user.
 
  - Minikube
 
+https://github.com/kelseyhightower/consul-on-kubernetes
+
 ### Set up your own service on each node
 
 Let's leave the consul cluster running (you can do a `vagrant suspend` and then

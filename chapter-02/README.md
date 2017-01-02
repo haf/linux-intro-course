@@ -263,8 +263,6 @@ kernel's [io devices][ioctl].
 In the next chapter we'll set up a Consul cluster to get better at using the
 terminal to start and debug new services.
 
-https://github.com/kelseyhightower/consul-on-kubernetes
-
  [vim-1]: https://yanpritzker.com/learn-to-speak-vim-verbs-nouns-and-modifiers-d7bfed1f6b2d#.ss7enj0qq
  [vim-2]: http://www.openvim.com/
  [vim-3]: https://danielmiessler.com/study/vim/
