@@ -231,6 +231,7 @@ starts. It works primarily in `/usr/lib/systemd/system` (note the double
 `system` substring) and in `/etc/systemd/system`. File in the former (ending in
 `.service`) are symlinked to the latter when you run `systemctl enable ...`.
 
+    mkdir -p /var/lib/consul
     cat <<EOF >./usr/lib/systemd/system/consul.service
     [Unit]
     Description=Consul server
