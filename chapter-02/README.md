@@ -1,4 +1,4 @@
-# Chapter 2 – Linux intro course
+# Chapter 2 – Basics
 
 The second chapter of the course continues with the basics while starting a
 foray into HTTP and TCP. At the end of this chapter should should be able to

@@ -1,6 +1,6 @@
 # Chapter 3 – Setting up service discovery
 
-## ToC
+## Table of Contents
 
 * [Chapter 3 – Setting up service discovery](#chapter-3--setting-up-service-discovery)
   * [Spawning four nodes](#spawning-four-nodes)

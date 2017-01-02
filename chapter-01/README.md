@@ -1,4 +1,4 @@
-# Linux intro course
+# Chapter 01 – Basics
 
 This course guides you towards a basic understanding of the linux operating
 system with focus on operating servers.
