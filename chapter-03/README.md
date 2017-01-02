@@ -159,7 +159,7 @@ without `-boostrap-expect` but instead with `-join`:
 
 And on n3:
 
-   # runuser -l consul -c 'consul agent -server -join 172.20.20.10 -data-dir=/var/lib/consul -bind 172.20.20.12 -config-dir /etc/consul.d'
+    # runuser -l consul -c 'consul agent -server -join 172.20.20.10 -data-dir=/var/lib/consul -bind 172.20.20.12 -config-dir /etc/consul.d'
 
 Now you should have three terminals looking like this.
 
