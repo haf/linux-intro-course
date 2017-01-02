@@ -56,6 +56,7 @@ We'll deploy these services with a few commands:
  1. Elastic's ElasticSearch & Kibana
  1. InfluxData's InfluxDB & Grafana
  1. Apache Flink
+ 1. Prometheus
 
 Once the initial setup is done, we'll also deploy these operators:
 
@@ -478,7 +479,94 @@ Then in another terminal:
 Observe how the pods (`kubectl get pods` are restarted and a quorum is resumed
 via the logs).
 
-## 
+## Setting up Kafka
+
+[Kafka][kafka] is a distributed message broker with ~7 day-limited replay
+support for topic-partitions. Kafka is highly-available with sysadmin opt-out
+semantics for when prioritising availability over consistency.
+
+There's also a client-side-only extension called Kafka-streams available that
+gives at-least-once delivery-semantics inside a stream-processing API. Kafka
+also has a number of add-on projects, like [schema-registry][sr] (w/
+[clients][sr-cl]) and [databus][kafka-databus] for database change capture.
+
+In other words, it's a pretty useful piece of software.
+
+While Consul could be used, Kafka uses [ZooKeeper][zk] (ZK) for historical
+reasons and because ZK is a very stable piece of software.
+
+The upcoming services: ZK, Kafka, ... will all be deployed without detailed
+inspection of their respective files. The files required to deploy them are very
+similar to what we've already done.
+
+### Setting up ZK
+
+ZooKeeper is very similar to Consul in functionality. It's used by Kafka for
+maintaining its cluster state. ZooKeeper in particular is set up using the file
+from [the StatefulSet tutorial][statefulset-tut].
+
+    kubectl create -f zookeeper.yml
+
+TBD: Triggers [this issue](https://github.com/kubernetes/minikube/issues/956).
+
+### Setting up Kafka
+
+    kubectl create -f kafka.yml
+
+TBD: Blocked on ZK error on minikube
+
+## F# service writing to Kafka
+
+TBD: using these:
+
+ - https://github.com/ah-/rdkafka-dotnet
+ - OR https://github.com/jet/kafunk
+ - AND https://github.com/haf/kubernetes-hello-fsharp/
+ - AND https://github.com/fsprojects/docker-fsharp
+ - AND https://github.com/fsharp-editing/Forge/
+
+## F# service reading from Kafka
+
+TBD: Same as above.
+
+## PostgreSQL
+
+TBD: https://sgotti.me/post/stolon-introduction/ and
+https://github.com/sorintlab/stolon
+
+## EventStore
+
+TBD: https://github.com/mastoj/eventstore-kubernetes but with StatefulSet.
+
+## ElasticSearch & Kibana
+
+TBD: https://github.com/Skillshare/kubernetes-efk but with StatefulSet renamed
+from PetSet.
+
+## InfluxDB & Grafana
+
+TBD: see Heapster implementation
+https://github.com/kubernetes/heapster/tree/master/deploy
+
+## Apache Flink
+
+TBD: https://github.com/melentye/flink-kubernetes
+
+### Setting up Prometheus
+
+    kubectl create -f https://coreos.com/operators/prometheus/latest/prometheus-operator.yaml
+    kubectl create -f https://coreos.com/operators/prometheus/latest/prometheus-k8s.yaml
+    minikube service prometheus-k8s
+    kubectl create -f https://coreos.com/operators/prometheus/latest/exporters.yaml
+    kubectl apply -f https://coreos.com/operators/prometheus/latest/prometheus-k8s-cm.yaml
+
+https://coreos.com/blog/the-prometheus-operator.html
+
+
+
+
+
+
 
 ## Set up your own service on each node
 
@@ -573,7 +661,7 @@ Introducing *Fakta*.
 
  [kube]: http://kubernetes.io/
  [kube-svc]: http://kubernetes.io/docs/user-guide/services/
- [kube-ep]: http://stackoverflow.com/a/33941818/63621
+ [kube-ep]: http://kubernetes.io/docs/api-reference/v1/definitions/#_v1_endpoints
  [kube-pod]: http://kubernetes.io/docs/user-guide/pods/
  [kube-ss]: http://kubernetes.io/docs/concepts/abstractions/controllers/statefulsets/
  [kube-secret]: http://kubernetes.io/docs/user-guide/secrets/
@@ -582,3 +670,9 @@ Introducing *Fakta*.
  [kube-podspec]: http://kubernetes.io/docs/api-reference/v1/definitions/#_v1_podspec
  [minikube-qs]: https://github.com/kubernetes/minikube#quickstart
  [cfssl]: https://pkg.cfssl.org/
+ [zk]: https://zookeeper.apache.org/
+ [kafka]: https://kafka.apache.org/
+ [sr]: https://github.com/confluentinc/schema-registry
+ [sr-cl]: https://github.com/Judopay/Judo.Kafka
+ [kafka-databus]: https://github.com/linkedin/databus/wiki
+ [statefulset-tut]: http://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/
