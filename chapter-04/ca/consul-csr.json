@@ -1,0 +1,21 @@
+{
+  "CN": "server.dc1.cluster.local",
+  "hosts": [
+    "server.dc1.cluster.local",
+    "127.0.0.1"
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "SE",
+      "L": "Uppland",
+      "O": "Acme",
+      "OU": "Consul",
+      "ST": "Stockholm"
+    }
+  ]
+}
+

@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: consul-join
+spec:
+  template:
+    metadata:
+      name: consul-join
+    spec:
+      containers:
+        - name: consul
+          image: consul:0.7.2
+          command:
+            - "/bin/consul"
+            - "join"
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          args:
+            - "-rpc-addr=consul-0.consul.$(NAMESPACE).svc.cluster.local:8400"
+            - consul-1.consul.$(NAMESPACE).svc.cluster.local
+            - consul-2.consul.$(NAMESPACE).svc.cluster.local
+      restartPolicy: Never
