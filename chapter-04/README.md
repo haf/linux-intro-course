@@ -39,7 +39,7 @@ also need:
 
 In this chapter you'll get to understand [Kubernetes][kube] and 1) how to deploy
 services for a subset of the above bullet points, and 2) how to let your own
-service make use of as much as possible of the above.
+stateless and [stateful][k-blog-ss] service make use of as much as possible of the above.
 
 <blockquote>Kubernetes is an open-source system for automating deployment,
 scaling, and management of containerized applications.</blockquote>
@@ -479,6 +479,90 @@ Then in another terminal:
 Observe how the pods (`kubectl get pods` are restarted and a quorum is resumed
 via the logs).
 
+## F# service writing to Kafka
+
+With Consul set up and the foundations of Kubernetes well learnt, we'll start
+writing some code of our own. We'd like to create a web service that responds
+with its version, is stateless and horisontally scalable and is capable of
+placing messages on a Kafka topic (using the default partitioner).
+
+To bootstrap the projects, we'll use a project called [Forge][forge-readme].
+Start by installing it.
+
+[Linux][linuxbrew]: `brew tap samritchie/forge && brew install forge`, OS
+X/[macOS][homebrew]: `brew tap samritchie/forge && brew install forge` and on
+[Windows][scoop]: `scoop install forge`. Unfortunately, at the time of writing I
+haven't been able to find a HTTP link to the different package managers, to
+share.
+
+### Creating a new web project
+
+Start by removing the finished solutions from `./chapter-04/apps` and then
+create a new [suave][suave] project; it will be our main point of interaction.
+
+    $ forge new project --name Api --folder . --template suave
+    Generating project...
+    ...
+
+Note the lower-case template name and the uppercase "Api" name. Now let's build
+the project, to be able to run it, and change to a prerelease version of Suave
+to get the latest goodness.
+
+    $ chmod +x build.sh && ./build.sh
+    ...
+    Finished Target: Build
+    ...
+    Total:     00:00:02.7263792
+    Status:    Ok
+    ---------------------------------------------------------------------
+    $ tree ./build
+    build
+    ├── Api.exe
+    ├── Api.exe.mdb
+    ├── FSharp.Core.dll
+    └── Suave.dll
+
+    0 directories, 4 files
+
+Change your `paket.dependencies` to:
+
+    nuget Suave prerelease
+
+### Updating dependencies and running
+
+Then run `mono .paket/paket.exe update` to update the dependencies. Re-run build
+to get the latest version. You can now start the API.
+
+    $ mono build/Api.exe
+    [14:20:35 INF] Smooth! Suave listener started in 106.655 with binding 127.0.0.1:8083
+
+In a different terminal, curl the API.
+
+    $ curl http://localhost:8083 -i
+    HTTP/1.1 200 OK
+    Server: Suave (https://suave.io)
+    Date: Tue, 03 Jan 2017 13:24:07 GMT
+    Content-Type: text/html
+    Content-Length: 12
+
+    Hello World!
+
+### Connecting to Kafka
+
+
+
+TBD: using these:
+
+ - https://github.com/ah-/rdkafka-dotnet
+ - OR https://github.com/jet/kafunk
+ - AND https://github.com/haf/kubernetes-hello-fsharp/
+ - AND https://github.com/fsprojects/docker-fsharp
+ - AND https://github.com/fsharp-editing/Forge/
+
+## F# service reading from Kafka
+
+TBD: Same as above.
+
 ## Setting up Kafka
 
 [Kafka][kafka] is a distributed message broker with ~7 day-limited replay
@@ -515,19 +599,6 @@ TBD: Triggers [this issue](https://github.com/kubernetes/minikube/issues/956).
 
 TBD: Blocked on ZK error on minikube
 
-## F# service writing to Kafka
-
-TBD: using these:
-
- - https://github.com/ah-/rdkafka-dotnet
- - OR https://github.com/jet/kafunk
- - AND https://github.com/haf/kubernetes-hello-fsharp/
- - AND https://github.com/fsprojects/docker-fsharp
- - AND https://github.com/fsharp-editing/Forge/
-
-## F# service reading from Kafka
-
-TBD: Same as above.
 
 ## PostgreSQL
 
@@ -675,4 +746,10 @@ Introducing *Fakta*.
  [sr]: https://github.com/confluentinc/schema-registry
  [sr-cl]: https://github.com/Judopay/Judo.Kafka
  [kafka-databus]: https://github.com/linkedin/databus/wiki
+ [k-blog-ss]: http://blog.kubernetes.io/2016/12/statefulset-run-scale-stateful-applications-in-kubernetes.html
  [statefulset-tut]: http://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/
+ [forge-readme]: https://github.com/fsharp-editing/Forge#installing
+ [linuxbrew]: http://linuxbrew.sh/
+ [homebrew]: http://brew.sh/
+ [scoop]: http://scoop.sh/
+ [suave]: https://suave.io
