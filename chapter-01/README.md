@@ -41,11 +41,8 @@ system with focus on operating servers.
 ## Introduction
 
 In this intro to Linux I'll assume that you know how to start *iTerm* or
-*Terminal* on OS X or *PowerShell* on Windows. Don't use `cmd.exe`, it's too
-archaic for our needs.
-
-If you have *Git Bash* installed on your machine, then you can use that and do
-the OSX/Linux version of the commands.
+*Terminal* on OS X or *Git Bash* on Windows. Don't use `cmd.exe`, or PowerShell,
+they are too archaic for our needs.
 
 Here we go!
 
@@ -64,11 +61,11 @@ Clone this repository: `git clone https://github.com/haf/linux-intro-course.git`
 If having trouble due to an HTTPS-MITM-ing proxy, run `git config --global
 http.sslVerify false` ([ref][git-https-mitm-fix]), then try again.
 
-### Change directory to `linux-intro-course`
+### Change directory to `linux-intro-course/chapter-01`
 
-After cloning, change your directory through `cd linux-intro-course`. This
-changes your **working directory**. You can check your current directory with
-`pwd`, or `(Resolve-Path .).Path` on Windows.
+After cloning, change your directory through `cd linux-intro-course/chapter-01`.
+This changes your **working directory**. You can check your current directory
+with `pwd`.
 
 ### Look around
 
@@ -91,7 +88,10 @@ We'll be learning how to use **Ubuntu 16.04 LTS**. This changes your
 
 You'll see output like:
 
-**TBD**
+    $ vagrant up
+    Bringing machine 'default' up with 'virtualbox' provider...
+    ==> default: Importing base box 'ubuntu/xenial64'...
+    ...
 
 If it queries you for the *interface* to bridge, select the interface with a
 local IP on your LAN. You can get the name and configuration of the interface
