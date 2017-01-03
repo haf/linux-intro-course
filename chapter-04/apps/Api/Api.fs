@@ -1,5 +1,6 @@
-open Suave                 // always open suave
-open Suave.Successful      // for OK-result
-open Suave.Web             // for config
-
-startWebServer defaultConfig (OK "Hello World!")
+open Suave
+open Suave.Successful
+let config =
+  { defaultConfig with
+      bindings = [ HttpBinding.createSimple Protocol.HTTP "::" 8080 ] }
+startWebServer config (OK "Hello World!")

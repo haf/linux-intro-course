@@ -524,21 +524,33 @@ to get the latest goodness.
 
     0 directories, 4 files
 
-Change your `paket.dependencies` to:
+Change your `paket.dependencies` to, in order to get the latest release of
+Suave.
 
     nuget Suave prerelease
 
 ### Updating dependencies and running
 
-Then run `mono .paket/paket.exe update` to update the dependencies. Re-run build
-to get the latest version. You can now start the API.
+Then run `mono .paket/paket.exe update` to update the dependencies. Now, ensure
+your App.fs file looks like this:
+
+```fsharp
+open Suave
+open Suave.Successful
+let config =
+  { defaultConfig with
+      bindings = [ HttpBinding.createSimple Protocol.HTTP "::" 8080 ] }
+      startWebServer config (OK "Hello World!")
+```
+
+Then run `./build.sh` again. You can now start the API.
 
     $ mono build/Api.exe
-    [14:20:35 INF] Smooth! Suave listener started in 106.655 with binding 127.0.0.1:8083
+    [14:20:35 INF] Smooth! Suave listener started in 106.655 with binding :::8080
 
 In a different terminal, curl the API.
 
-    $ curl http://localhost:8083 -i
+    $ curl 'http://[::]:8080' -i
     HTTP/1.1 200 OK
     Server: Suave (https://suave.io)
     Date: Tue, 03 Jan 2017 13:24:07 GMT
@@ -547,9 +559,107 @@ In a different terminal, curl the API.
 
     Hello World!
 
-### Connecting to Kafka
+### Adding tests
+
+We'll add some test stubs as well. These will be used to test our code and API
+in the future. In the `apps` folder, run:
+
+    $ forge new project --name Api.Tests --folder . --template expecto
+    Generating project...
+    ...
+    /Users/h/dev/lynx/linux-intro/chapter-04/apps/paket.dependencies contains
+    package FAKE in group Main already.
+    0 seconds - ready.
+    Done!
+    $ xbuild Api.Tests/Api.Tests.fsproj && mono --debug Api.Tests/bin/Debug/Api.Tests.exe
+    [16:34:55 INF] EXPECTO? Running tests...
+    [16:34:55 ERR] samples/should fail failed in 00:00:00.0003260.
+    I should fail because the subject is false.
+
+    [16:34:55 INF] EXPECTO! 2 tests run in 00:00:00.0360801 – 1 passed, 0 ignored, 1 failed, 0 errored. ( ರ Ĺ̯ ರೃ )
+
+### Creating a container
+
+Kubernetes uses a *runtime*; either *docker* or *rkt* (pronounced [ˈrɒkɪt]) for
+packaging and running software. Kubernetes has API adapters for them both. As
+such, we should build *an image* that can be started as a *container* on Docker.
+
+We'll need to copy the binaries into the image and then run them with Mono. When
+you've compiled once (like above with `xbuild`), create the following
+`Dockerfile` next to the `Api` and `Api.Tests` folders.
+
+    FROM fsharp:latest
+
+    EXPOSE 8080
+    COPY build /app
+    CMD mono /app/Api.exe
+
+In order to build the image and also have that image accessible to Kubernetes,
+set the environment variables for the *minikube* docker host. By running `docker
+version` you validate that the docker client has access to the host.
+
+    $ eval $(minikube docker-env)
+    $ docker version
+    Client:
+     Version:      1.12.0
+    ...
+    Server:
+     Version:      1.11.1
+    ...
+
+Now, let's build the container to be named `api` and have tag `v1`.
+
+    $ docker build --tag api:v1 .
+    Sending build context to Docker daemon 474.1 MB
+    Step 1 : FROM fsharp:latest
+    latest: Pulling from library/fsharp
+    16da43b30d89: Pull complete
+    ...
+    Successfully built 83687f974734
+
+### Running the container
+
+The container should be run in interactive mode `-i`, with the
+stdin/stdout/stderr attached to your terminal `-t`, be removed when you send it
+SIGINT `--rm`:
+
+    $ docker run --rm -it api:v1
+    [15:54:20 INF] Smooth! Suave listener started in 84.895 with binding :::8080
+
+Press `CTRL+C` and then validate that the image `api` comes up in the following
+listing.
+
+    $ docker images
+    REPOSITORY TAG IMAGE ID      CREATED       SIZE
+    api        v1  85342420bbe2  2 minutes ago 763.5 MB
+    ...
 
 
+#### Running with Kubernetes
+
+We should similarly be able to create a [Deployment][kube-depl] with Kubernetes.  
+
+    $ kubectl run api --image=api:v1 --port=8080
+    deployment "api" created
+    $ kubectl get pods
+    NAME                                   READY     STATUS    RESTARTS   AGE
+    api-2076293793-djdsx                   1/1       Running   0          36s
+    ...
+    $ kubectl get deploy
+    NAME                  DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+    api                   1         1         1            1           1m
+
+Then we *expose* it so that we can make HTTP requests to it.
+
+    $ kubectl expose deployment api --type=NodePort
+    service "api" exposed
+
+And test it out:
+
+    $ curl $(minikube service api --url)
+    Hello World!
+
+### Adding kafunk
 
 TBD: using these:
 
@@ -739,6 +849,7 @@ Introducing *Fakta*.
  [kube-configmap]: http://kubernetes.io/docs/user-guide/configmap/
  [kube-ssdm]: https://github.com/kubernetes/community/blob/master/contributors/design-proposals/stateful-apps.md
  [kube-podspec]: http://kubernetes.io/docs/api-reference/v1/definitions/#_v1_podspec
+ [kube-depl]: http://kubernetes.io/docs/user-guide/deployments/
  [minikube-qs]: https://github.com/kubernetes/minikube#quickstart
  [cfssl]: https://pkg.cfssl.org/
  [zk]: https://zookeeper.apache.org/
