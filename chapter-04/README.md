@@ -786,14 +786,17 @@ let main argv =
   0
 ```
 
-TBD: using these:
-
- - AND https://github.com/haf/kubernetes-hello-fsharp/
- - AND https://github.com/fsprojects/docker-fsharp
+You can now recompile the program and run it. If you have a local Kafka-broker
+you should be able to `tail -f` its logs to see messages being produced. On OS X
+the logs are placed at `/usr/local/var/log/kafka/kafka_output.log` by default.
+On Linux, they'd end up in `/var/lib/log/kafka/kafka_output.log`.
 
 ## F# service reading from Kafka
 
-TBD: Same as above.
+Let's generate a `Worker` console app that can consume messages from the Kafka
+topic.
+
+    forge new project --name Worker --folder . --template console
 
 ## Setting up Kafka
 
