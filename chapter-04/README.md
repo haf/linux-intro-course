@@ -51,6 +51,7 @@ We'll deploy these services with a few commands:
  1. Apache Kafka
  1. A F# service with Suave and Logary writing to Kafka
  1. A F# service with Suave and Logary reading from Kafka
+ 1. A schema registry
  1. PostgreSQL
  1. EventStore
  1. Elastic's ElasticSearch & Kibana
@@ -508,7 +509,7 @@ Note the lower-case template name and the uppercase "Api" name. Now let's build
 the project, to be able to run it, and change to a prerelease version of Suave
 to get the latest goodness.
 
-    $ chmod +x build.sh && ./build.sh
+    $ chmod +x build.sh && ./build.sh && ./build.sh
     ...
     Finished Target: Build
     ...
@@ -524,23 +525,27 @@ to get the latest goodness.
 
     0 directories, 4 files
 
-Change your `paket.dependencies` to, in order to get the latest release of
-Suave.
+The first build downloads all packages, the second time it actually builds the
+program.
 
-    nuget Suave prerelease
+### Running the program
 
-### Updating dependencies and running
-
-Then run `mono .paket/paket.exe update` to update the dependencies. Now, ensure
-your App.fs file looks like this:
+Now, make your App.fs file look like this:
 
 ```fsharp
+module Api.Program
+
 open Suave
 open Suave.Successful
+
 let config =
   { defaultConfig with
       bindings = [ HttpBinding.createSimple Protocol.HTTP "::" 8080 ] }
-      startWebServer config (OK "Hello World!")
+
+[<EntryPoint>]
+let main argv =
+  startWebServer config (OK "Hello World!")
+  0
 ```
 
 Then run `./build.sh` again. You can now start the API.
@@ -559,6 +564,24 @@ In a different terminal, curl the API.
 
     Hello World!
 
+### Viewing in VSCode
+
+Writing a statically typed language without an editor can gives you hints is
+like love without kisses. So let's install VSCode and ionide.
+
+    brew cask install visual-studio-code
+
+Or by surfing to [its homepage][vscode]. Proceed to install the [Ionide
+extension][ionide] (all of them). It will give you code-completion and label the
+code as you type.
+
+![Ionide extension](./imgs/ionide-extension.png)
+
+If you installed VSCode via a click-click installer, you can add the `code`
+binary to your path by pressing `CMD+P`, like so:
+
+![VSCode on PATH](./imgs/vscode-path.png)
+
 ### Adding tests
 
 We'll add some test stubs as well. These will be used to test our code and API
@@ -575,7 +598,6 @@ in the future. In the `apps` folder, run:
     [16:34:55 INF] EXPECTO? Running tests...
     [16:34:55 ERR] samples/should fail failed in 00:00:00.0003260.
     I should fail because the subject is false.
-
     [16:34:55 INF] EXPECTO! 2 tests run in 00:00:00.0360801 – 1 passed, 0 ignored, 1 failed, 0 errored. ( ರ Ĺ̯ ರೃ )
 
 ### Creating a container
@@ -637,7 +659,7 @@ listing.
 
 #### Running with Kubernetes
 
-We should similarly be able to create a [Deployment][kube-depl] with Kubernetes.  
+We should similarly be able to create a [Deployment][kube-depl] with Kubernetes.
 
     $ kubectl run api --image=api:v1 --port=8080
     deployment "api" created
@@ -659,15 +681,114 @@ And test it out:
     $ curl $(minikube service api --url)
     Hello World!
 
-### Adding kafunk
+### Publishing messages to Kafka
+
+There are two libraries you can use for publishing to a recent Kafka version
+(v0.10 at time of writing): [kafunk][kafunk] and [RdKafka][rdkafka]. We'll try
+out both, so that you can see the differences in code.
+
+Add `nuget Kafkunk` to `paket.dependencies` and `Kafunk` to
+`Api/paket.references`. Then run `mono .paket/paket.exe install` or press
+`CMD+SHIFT+P` and run the `Paket: Install` command from within VSCode.
+
+![Paket install VSCode](./imgs/paket-install.png)
+
+This changes the `fsproj` to include your package. The `fsproj` file is used by
+`msbuild`/`xbuild` to compile the F# code into Common Intermediate Language
+(CIL).
+
+Now, let's write some code that takes POST messages in the URI path and publish
+those on a Kafka topic. This code goes in Api.fs.
+
+    [lang=fsharp]
+    module Api.Program
+
+    open Suave
+    // operators gives >=>
+    open Suave.Operators
+    // gives OK
+    open Suave.Successful
+    // gives NOT_FOUND
+    open Suave.RequestErrors
+    // gives pathScan and path
+    open Suave.Filters
+    // gives the ability to set a mime type
+    open Suave.Writers
+    // the kafka library
+    open Kafunk
+
+    // Same as before.
+    let suaveConfig =
+      { defaultConfig with
+          bindings = [ HttpBinding.createSimple Protocol.HTTP "::" 8080 ] }
+
+    // I normally encapsule my runtime state in a record like this
+    type State =
+      { kafka : KafkaConn
+        producer : Producer }
+
+      interface System.IDisposable with
+        member x.Dispose () =
+          x.kafka.Close()
+
+    // This is a helper function that aliases the longer system.text fn
+    let utf8 =
+      System.Text.Encoding.UTF8.GetBytes : string -> byte[]
+
+    // The main work is done here. Note how it takes a `state` variable and
+    // returns a function from string to WebPart. This first `state` parameter
+    // is given in `main` below. The second parameter `message` will be given
+    // anew every request as the message can differ.
+    let publish state : string -> WebPart =
+      fun (message : string) ->
+        // this is how to create an Async Suave web part
+        fun httpCtx ->
+          async {
+            // Suave/F# async fits nicely with Kafunk's API.
+            let! prodRes =
+              Producer.produce state.producer [| ProducerMessage.ofBytes (utf8 message) |]
+            // Finally, we return this string to the requestor.
+            return! CREATED "Alrighty then!" httpCtx
+          }
+
+    // This function is the api composition. It should be clear and make it easy
+    // to find any particular path supported by the API.
+    let web state =
+      // `choose` will go through its `WebPart list` from top to bottom to find
+      // a WebPart that matches
+      choose [
+        POST >=> pathScan "/api/publish/%s" (publish state)
+        GET >=> path "/health" >=> OK "Alive!"
+        NOT_FOUND "The requested resource was not found"
+      ]
+      // this API always returns strings
+      >=> setMimeType "text/plain; charset=utf-8"
+
+    // By separating out configuration to its own function, it's easier to see
+    // where side-effects, like connections to message brokers, happen.
+    let configure argv =
+      let pcfg =
+        ProducerConfig.create (
+          "web-greetings",
+          Partitioner.roundRobin,
+          requiredAcks = RequiredAcks.Local)
+      let kafka = Kafka.connHost "localhost" // side-effecting
+      let producer = Producer.create kafka pcfg // side-effecting
+      // Returns a State record
+      { kafka = kafka; producer = producer }
+
+    [<EntryPoint>]
+    let main argv =
+      // with `use` we can ensure that the connection is closed when the app
+      // is interrupted
+      use state = configure argv
+      startWebServer suaveConfig (web state)
+      0
 
 TBD: using these:
 
- - https://github.com/ah-/rdkafka-dotnet
- - OR https://github.com/jet/kafunk
  - AND https://github.com/haf/kubernetes-hello-fsharp/
  - AND https://github.com/fsprojects/docker-fsharp
- - AND https://github.com/fsharp-editing/Forge/
 
 ## F# service reading from Kafka
 
@@ -864,3 +985,6 @@ Introducing *Fakta*.
  [homebrew]: http://brew.sh/
  [scoop]: http://scoop.sh/
  [suave]: https://suave.io
+ [kafunk]: https://github.com/jet/kafunk
+ [rdkafka]: https://github.com/ah-/rdkafka-dotnet
+ [vscode]: https://code.visualstudio.com/
