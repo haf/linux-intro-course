@@ -798,6 +798,68 @@ topic.
 
     forge new project --name Worker --folder . --template console
 
+To get acquainted with RdKafka, let's use that for the new console app. Add the
+package `RdKafka` to your `paket.dependencies` and to `paket.references`. To
+make it work, change the `TargetFrameworkVersion`-element to. Then run `paket
+install` again.
+
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+
+The code for consuming messages from Kafka can be written like so.
+
+```fsharp
+module Worker.Program
+
+open System
+open System.Threading
+open RdKafka
+
+let utf8ToString =
+  System.Text.Encoding.UTF8.GetString : byte[] -> string
+
+[<EntryPoint>]
+let main argv =
+  use mre = new ManualResetEventSlim(false)
+  use sub = Console.CancelKeyPress.Subscribe(fun _ ->
+    printfn "Shutting down"
+    mre.Set())
+  let config = Config(GroupId = "example-csharp-consumer")
+  use consumer = new EventConsumer(config, "127.0.0.1:9092")
+  use msgs = consumer.OnMessage.Subscribe (fun msg ->
+    let text = utf8ToString msg.Payload
+    printfn "Topic: %s Partition: %i Offset: %i – %s"
+            msg.Topic
+            msg.Partition
+            msg.Offset
+            text)
+  consumer.Subscribe(ResizeArray<_> ["web-greetings"])
+  consumer.Start()
+  printfn "Running!"
+  mre.Wait() |> ignore
+  0
+```
+
+#### Install RdKafka and run
+
+In order to use RdKafka, you need to have `librdkafka` available. On OS X, you
+can run this:
+
+    brew install librdkafka
+    brew link --overwrite mono
+
+On Windows, you can follow this [blog entry][rdkafka-debug] to debug your
+dependencies manually ;), if it's not working out of the box.
+
+If you have a local Kafka broker running, you should be able to start it.
+
+    mono build/Worker.exe
+
+Now publish some data via the API!
+
+    curl -X POST 'http://localhost:8080/api/publish/goodbye'
+
+Press `CTRL+C` to stop the services.
+
 ## Setting up Kafka
 
 [Kafka][kafka] is a distributed message broker with ~7 day-limited replay
@@ -992,3 +1054,4 @@ Introducing *Fakta*.
  [kafunk]: https://github.com/jet/kafunk
  [rdkafka]: https://github.com/ah-/rdkafka-dotnet
  [vscode]: https://code.visualstudio.com/
+ [rdkafka-debug]: https://j-alexander.github.io/entry/2017/01/04/rdkafka-native-dependencies
