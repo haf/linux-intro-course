@@ -700,7 +700,7 @@ This changes the `fsproj` to include your package. The `fsproj` file is used by
 Now, let's write some code that takes POST messages in the URI path and publish
 those on a Kafka topic. This code goes in Api.fs.
 
-```
+```fsharp
 module Api.Program
 
 open Suave
