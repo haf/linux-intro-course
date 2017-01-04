@@ -858,7 +858,8 @@ Now publish some data via the API!
 
     curl -X POST 'http://localhost:8080/api/publish/goodbye'
 
-Press `CTRL+C` to stop the services.
+Press `CTRL+C` to stop the services. Now, can you start two workers and have the
+API publish in a round-robin fashion to them?
 
 ## Setting up Kafka
 
