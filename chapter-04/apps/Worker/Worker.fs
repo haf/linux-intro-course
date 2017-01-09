@@ -13,7 +13,7 @@ let main argv =
   use sub = Console.CancelKeyPress.Subscribe(fun _ ->
     printfn "Shutting down"
     mre.Set())
-  let config = Config(GroupId = "example-csharp-consumer")
+  let config = Config(GroupId = "example-fsharp-consumer")
   use consumer = new EventConsumer(config, "127.0.0.1:9092")
   use msgs = consumer.OnMessage.Subscribe (fun msg ->
     let text = utf8ToString msg.Payload
@@ -22,7 +22,7 @@ let main argv =
             msg.Partition
             msg.Offset
             text)
-  consumer.Subscribe(ResizeArray<_> ["web-greetings"])
+  consumer.Subscribe(ResizeArray<_> ["web-goodbyes"])
   consumer.Start()
   printfn "Running!"
   mre.Wait() |> ignore

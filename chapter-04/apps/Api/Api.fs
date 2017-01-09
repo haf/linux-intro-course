@@ -66,7 +66,7 @@ let web state =
 let configure argv =
   let pcfg =
     ProducerConfig.create (
-      "web-greetings",
+      "web-goodbyes",
       Partitioner.roundRobin,
       requiredAcks = RequiredAcks.Local)
   let kafka = Kafka.connHost "localhost" // side-effecting
