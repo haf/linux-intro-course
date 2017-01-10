@@ -4,8 +4,28 @@ In this chapter we'll dive a little deeper into Kafka, a distributed message
 broker.
 
 ## Setup
+
+    git clone https://github.com/haf/vagrant-kafka.git
+    cd vagrant-kafka
+    vagrant up
+
 ### Setting up a 3-node ZK cluster
+
+    #!/bin/bash
+    # create myid file. see http://zookeeper.apache.org/doc/r3.1.1/zookeeperAdmin.html#sc_zkMulitServerSetup
+    if [ ! -d /tmp/zookeeper ]; then
+        echo creating zookeeper data dir...
+        mkdir /tmp/zookeeper
+        echo $1 > /tmp/zookeeper/myid
+    fi
+    $HOME/kafka_2.11-0.10.1.1/bin/zookeeper-server-start.sh /vagrant/config/zookeeper.properties > /tmp/zookeeper.log &
+
 ### Setting up a 3-node Kafka cluster
+
+    #!/bin/bash
+    $HOME/kafka_2.11-0.10.1.1/bin/kafka-server-start.sh /vagrant/config/server$1.properties &
+
+Note how the Vagrantfile assigns specific IPs to each node.
 
 ## Applied – Consumer and Producer
 ### Run your producer against the cluster
