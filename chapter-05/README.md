@@ -18,28 +18,43 @@ Kafka comes with [system tools][kafka-systools] that support operating the
 broker.
 
  - [kafka-acls][kafka-acls] – "Principal P is [Allowed/Denied] Operation O From
-   Host H On Resource R" – [KIP-11][kafka-acls-1]
+   Host H On Resource R" – [KIP-11][kafka-acls-1].
  - [kafka-replay-log-producer][kafka-rlp] – Consume from one topic and replay
-   those messages and produce to another topic
- - kafka-configs – 
- - kafka-replica-verification
- - kafka-console-consumer
- - kafka-run-class
- - kafka-console-producer
- - kafka-server-start
- - kafka-consumer-groups
- - kafka-server-stop
- - kafka-consumer-offset-checker
- - kafka-simple-consumer-shell
- - kafka-consumer-perf-test
- - kafka-streams-application-reset
- - kafka-mirror-maker
- - kafka-topics
- - kafka-preferred-replica-election
- - kafka-verifiable-consumer
- - kafka-producer-perf-test
- - kafka-verifiable-producer
- - kafka-reassign-partitions
+   those messages and produce to another topic.
+ - kafka-configs – Add/Remove entity config for a topic, client, user or broker,
+   e.g. `topics`'s configuration `delete.retention.ms`.
+ - kafka-replica-verification – Validate that all replicas for a set of topics
+   have the same data. Runs continuously. Also see [Replication
+   Tools][kafka-repl-tools].
+ - kafka-console-consumer – The console consumer is a tool that reads data from
+   Kafka and outputs it to standard output.
+ - kafka-run-class – Used to invoke "classes" from the `kafka.tools` namespace.
+   Most of these tools boil down to a "class call" like this.
+ - kafka-console-producer – A console producer. Call with `--broker-list` and
+   `--topic`.
+ - kafka-server-start – Used by the systemd units.
+ - kafka-server-stop – Used by the systemd units.
+ - kafka-simple-consumer-shell – A low-level tool for fetching data directly
+   from a particular replica.
+ - kafka-consumer-perf-test – A tool to check performance of your cluster. Use
+   [together][kafka-perf-1] [with a setup][kafka-perf-2].
+ - kafka-streams-application-reset – A [tool][kafka-streams-reset] that resets
+   the position a stream processing node has.
+ - kafka-mirror-maker – Continuously copy data between two Kafka clusters.
+ - kafka-topics – Create, delete, describe, or change a topic. Can also set
+   configuration for topics, like the above mentioned retention policy.
+ - kafka-preferred-replica-election – A tool that causes leadership for each
+   partition to be transferred back to the 'preferred replica', it can be used
+   to balance leadership among the servers.
+ - kafka-verifiable-consumer – consumes messages from a specific  topic  and
+   emits  consumer events (e.g. group rebalances, received messages,
+   and offsets committed) as JSON objects to STDOUT.
+ - kafka-producer-perf-test – A tool to verify producer performance with.
+ - kafka-verifiable-producer – A tool that produces increasing integers to the
+   specified topic and prints JSON metadata to stdout on each "send" request,
+   making externally visible which messages have been acked and which have not.
+ - kafka-reassign-partitions – This command moves topic partitions between
+   replicas.
 
 ## Applied – Resize partitions
 
@@ -111,6 +126,10 @@ separate cluster.
  [kafka-acls]: https://cwiki.apache.org/confluence/display/KAFKA/Kafka+Authorization+Command+Line+Interface
  [kafka-acls-1]: https://cwiki.apache.org/confluence/display/KAFKA/KIP-11+-+Authorization+Interface
  [kafka-rlp]: https://cwiki.apache.org/confluence/display/KAFKA/System+Tools
+ [kafka-repl-tools]: https://cwiki.apache.org/confluence/display/KAFKA/Replication+tools
+ [kafka-streams-reset]: https://www.confluent.io/blog/data-reprocessing-with-kafka-streams-resetting-a-streams-application/
+ [kafka-perf-1]: https://cwiki.apache.org/confluence/display/KAFKA/Performance+testing
+ [kafka-perf-2]: https://gist.github.com/jkreps/c7ddb4041ef62a900e6c
  [jepsen-kafka]: https://aphyr.com/posts/293-jepsen-kafka
  [kafka-idem-prod]: https://cwiki.apache.org/confluence/display/KAFKA/Idempotent+Producer
  [kafka-mirror]: https://kafka.apache.org/documentation/#basic_ops_mirror_maker
