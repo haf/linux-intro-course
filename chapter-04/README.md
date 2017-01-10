@@ -891,11 +891,17 @@ from [the StatefulSet tutorial][statefulset-tut].
 
 TBD: Triggers [this issue](https://github.com/kubernetes/minikube/issues/956).
 
+Continue with [chapter 05](../chapter-05.md).
+
 ### Setting up Kafka
 
     kubectl create -f kafka.yml
 
-TBD: Blocked on ZK error on minikube
+TBD: Triggers [this issue](https://github.com/kubernetes/minikube/issues/956).
+
+Continue with [chapter 05](../chapter-05.md).
+
+------------
 
 
 ## PostgreSQL
