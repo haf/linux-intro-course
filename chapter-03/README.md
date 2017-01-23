@@ -305,6 +305,7 @@ The key is used for the configuration files.
       "data_dir": "/var/lib/consul",
       "encrypt": "$CONSUL_KEY"
     }
+    EOF
 
 Then fill out the server and clients, too:
 
@@ -316,6 +317,7 @@ Then fill out the server and clients, too:
       "encrypt": "$CONSUL_KEY",
       "start_join": ["172.20.20.11", "172.20.20.12"]
     }
+    EOF
 
     cat <<EOF >./etc/consul.d/client/consul.conf
     {
@@ -325,6 +327,7 @@ Then fill out the server and clients, too:
       "encrypt": "$CONSUL_KEY",
       "start_join": ["172.20.20.10", "172.20.20.11", "172.20.20.12"]
     }
+    EOF
 
 If you happen to have static IPs in your production environment, this will be
 enough. In fact, since Consul works well for service discovery, having specific
