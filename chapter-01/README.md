@@ -142,7 +142,7 @@ executing things as the specified user. When executing things as an
 administrator; root, the dollar changes to a hash, `#`.
 
 Now you're ready to start exploring the operating system. Remember that `cd`
-changes directory`, `..` means the parent directory and `.` is the current
+changes directory, `..` means the parent directory and `.` is the current
 directory.
 
 When switching between *root* and the user account, guides like this one tends
