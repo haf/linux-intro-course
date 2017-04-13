@@ -11,3 +11,4 @@ professional – with focus on how to deploy .Net services on Linux and in Chapt
  - [Chapter 02](./chapter-02/README.md)
  - [Chapter 03](./chapter-03/README.md)
  - [Chapter 04](./chapter-04/README.md)
+ - [Chapter 05](./chapter-05/README.md)
