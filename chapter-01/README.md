@@ -387,15 +387,15 @@ to know what program to run your file with. Let's try to run it!
 
 That didn't work. We have to use the dot-syntax for things that can run;
 
-   $ ./hello.fsx
-   -bash: ./hello.fsx: Permission denied
+    $ ./hello.fsx
+    -bash: ./hello.fsx: Permission denied
 
 This time – a different error message. Bash is telling us that it's not
 permitted to execute the fsx file.
 
-   $ chmod +x hello.fsx
-   $ ./hello.fsx
-   [20:06:35 INF] Smooth! Suave listener started in 65.762 with binding 127.0.0.1:8083
+    $ chmod +x hello.fsx
+    $ ./hello.fsx
+    [20:06:35 INF] Smooth! Suave listener started in 65.762 with binding 127.0.0.1:8083
 
 ### Collecting the IP numbers
 
